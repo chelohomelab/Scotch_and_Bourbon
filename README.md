@@ -56,6 +56,36 @@ Deployment uses native Python + systemd inside an **unprivileged** LXC container
 
 The script creates a dedicated `cellar` system user, a Python virtual environment, and registers the app as a systemd service that starts on boot.
 
+### Prepare the LXC Container (run once after creation)
+
+Before running the setup script, do a full system update and configure SSH root access:
+
+```bash
+# 1. Update and upgrade the container
+apt-get update && apt-get upgrade -y
+
+# 2. Allow SSH login as root
+sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+# 3. Set a root password (if not already set)
+passwd root
+
+# 4. Restart SSH to apply the change
+systemctl restart ssh
+```
+
+You can now SSH in from your workstation:
+```bash
+ssh root@<lxc-ip>
+```
+
+Or use key-based auth (recommended) — set `PermitRootLogin prohibit-password` instead and add your public key:
+```bash
+mkdir -p /root/.ssh
+echo "<your-public-key>" >> /root/.ssh/authorized_keys
+chmod 700 /root/.ssh && chmod 600 /root/.ssh/authorized_keys
+```
+
 ### Updating
 
 Re-run the same script — it detects the service is already installed and switches to update mode automatically: pulls code (if git), reinstalls dependencies, and restarts the service.
